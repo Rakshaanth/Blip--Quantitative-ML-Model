@@ -1,4 +1,5 @@
 
+from fileinput import filename
 import requests
 import json
 from pathlib import Path
@@ -9,16 +10,23 @@ import pandas as pd
 
 load_dotenv()
 
+core_metric = "TIME_SERIES_MONTHLY_ADJUSTED" # different key than fundamental metrics
+fundamental_metrics = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW","EARNINGS", "SHARES_OUTSTANDING"] # same URL and key format
+
+''' Keys within JSON responses for corresponding function(s)'''
+keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
+keyReports = "quarterlyReports" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW
+keyEarnings = "quarterlyEarnings" # for EARNINGS
+keyShares = "data" # for SHARES_OUTSTANDING
+
+date_colCore = None # for TIME_SERIES_MONTHLY_ADJUSTED (index already dates)
+date_colFundamentals = "fiscalDateEnding" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW, EARNINGS
+date_colShares = "date" # for SHARES_OUTSTANDING
+
+
 class AlphaVantageExtractor:
 
-    core_metric = "TIME_SERIES_MONTHLY_ADJUSTED" # different key than fundamental metrics
-    fundamental_metrics = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW","EARNINGS", "SHARES_OUTSTANDING"] # same URL and key format
 
-    '''' Keys within JSON responses for corresponding function(s)'''
-    keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
-    keyReports = "quarterlyReports", "annualReports" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW
-    keyEarnings = "quarterlyEarnings", "annualEarnings" # for EARNINGS
-    keyShares = "data" # for SHARES_OUTSTANDING
 
     def APIFetch(self, function: str) -> dict:
         API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")  # Replace with your actual API key or load from environment
@@ -63,7 +71,42 @@ class AlphaVantageExtractor:
                 print(f"Error saving data: {e}")
 
 class AlphaVantageTransformer:
-    pass
+    """Set consistent date index for all JSON data types."""
+
+    def load_and_index(self, filename: str, date_col: str = None) -> pd.DataFrame:
+        """
+        Load JSON, set date index, sort chronologically.
+        :param filename: path to JSON file
+        :param date_col: column to use as index; None for core metric (index already dates)
+        """
+        df = pd.read_json(filename)
+
+        if date_col:
+            df[date_col] = pd.to_datetime(df[date_col])
+            df.set_index(date_col, inplace=True)
+        else:
+            df.index = pd.to_datetime(df.index)
+
+        return df.sort_index()
+
+    def stripQuarterly(self, df: pd.DataFrame, key: str = None) -> pd.DataFrame:
+        """
+        Keep only quarterly data. For fundamentals, key is 'quarterlyReports' or 'quarterlyEarnings'.
+        For shares, key is 'data'.
+        """
+        if key:
+            df = pd.DataFrame(df[key])
+            df['date'] = pd.to_datetime(df['date'] if 'date' in df.columns else df['fiscalDateEnding'])
+            df.set_index('date', inplace=True)
+        return df.sort_index()
+
+    
+    def mergeIndex():
+        pass  # Placeholder for future implementation
+
+    
+
+
 
 
 if __name__ == "__main__":
