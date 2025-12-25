@@ -8,7 +8,7 @@ import time
 
 load_dotenv()
 
-class AlphaVantageDataFetcher:
+class AlphaVantageExtractor:
 
     core_metric = "TIME_SERIES_MONTHLY_ADJUSTED" # different key than fundamental metrics
     fundamental_metrics = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW","EARNINGS", "SHARES_OUTSTANDING"] # same URL and key format
@@ -64,7 +64,7 @@ class AlphaVantageDataFetcher:
 
 
 if __name__ == "__main__":
-    fetch = AlphaVantageDataFetcher()
+    fetch = AlphaVantageExtractor()
     # fetch.StoreJSON("TIME_SERIES_MONTHLY_ADJUSTED")
     # time.sleep(2) 
     # fetch.StoreJSON("INCOME_STATEMENT")
