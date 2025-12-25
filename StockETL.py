@@ -61,6 +61,8 @@ class AlphaVantageExtractor:
             except Exception as e:
                 print(f"Error saving data: {e}")
 
+class AlphaVantageTransformer:
+    pass
 
 
 if __name__ == "__main__":
