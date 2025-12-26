@@ -13,12 +13,6 @@ load_dotenv()
 core_metric = "TIME_SERIES_MONTHLY_ADJUSTED" # different key than fundamental metrics
 fundamental_metrics = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW","EARNINGS", "SHARES_OUTSTANDING"] # same URL and key format
 
-''' Keys within JSON responses for corresponding function(s)'''
-keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
-keyReports = "quarterlyReports" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW
-keyEarnings = "quarterlyEarnings" # for EARNINGS
-keyShares = "data" # for SHARES_OUTSTANDING
-
 date_colCore = None # for TIME_SERIES_MONTHLY_ADJUSTED (index already dates)
 date_colFundamentals = "fiscalDateEnding" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW, EARNINGS
 date_colShares = "date" # for SHARES_OUTSTANDING
@@ -26,6 +20,11 @@ date_colShares = "date" # for SHARES_OUTSTANDING
 
 class AlphaVantageExtractor:
 
+    ''' Keys within JSON responses for corresponding function(s)'''
+    keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
+    keyReports = "quarterlyReports" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW
+    keyEarnings = "quarterlyEarnings" # for EARNINGS
+    keyShares = "data" # for SHARES_OUTSTANDING
 
 
     def APIFetch(self, function: str) -> dict:
@@ -55,7 +54,7 @@ class AlphaVantageExtractor:
                     if self.keyMonth not in data:
                         raise ValueError(f"Expected key '{self.keyMonth}' not found in response.")
                 elif function in self.fundamental_metrics:
-                    if function == ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"]:
+                    if function in ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"]:
                         if not any(key in data for key in self.keyReports):
                             raise ValueError(f"Expected keys '{self.keyReports}' not found in response.")
                     elif function == "EARNINGS":
@@ -100,9 +99,16 @@ class AlphaVantageTransformer:
             df.set_index('date', inplace=True)
         return df.sort_index()
 
-    
-    def mergeIndex():
-        pass  # Placeholder for future implementation
+
+    def mergeIndex(self, df_core: pd.DataFrame, df_list: list) -> pd.DataFrame:
+        """
+        Align multiple quarterly DataFrames to the monthly core DataFrame index.
+        Forward-fill to prevent leakage.
+        """
+        merged = df_core.copy()
+        for df in df_list:
+            merged = merged.join(df.reindex(merged.index, method='ffill'))
+        return merged
 
     
 
@@ -110,16 +116,7 @@ class AlphaVantageTransformer:
 
 
 if __name__ == "__main__":
-    fetch = AlphaVantageExtractor()
-    # fetch.StoreJSON("TIME_SERIES_MONTHLY_ADJUSTED")
-    # time.sleep(2) 
-    # fetch.StoreJSON("INCOME_STATEMENT")
-    # time.sleep(2)
-    # fetch.StoreJSON("BALANCE_SHEET") 
-    # time.sleep(2)
-    # fetch.StoreJSON("CASH_FLOW")
-    # time.sleep(2)
-    # fetch.StoreJSON("EARNINGS")
-    # time.sleep(2)
-    fetch.StoreJSON("SHARES_OUTSTANDING")
+    extract = AlphaVantageExtractor()
+    transform = AlphaVantageTransformer()
+    
 
