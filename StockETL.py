@@ -72,14 +72,27 @@ class AlphaVantageExtractor:
 class AlphaVantageTransformer:
     """Set consistent date index for all JSON data types."""
 
-    def load_and_index(self, filename: str, date_col: str = None) -> pd.DataFrame:
-        """
-        Load JSON, set date index, sort chronologically.
-        :param filename: path to JSON file
-        :param date_col: column to use as index; None for core metric (index already dates)
-        """
-        df = pd.read_json(filename)
+    def setIndex(self, filename: str, date_col: str = None) -> pd.DataFrame:
+        with open(filename, 'r') as f:
+            data = json.load(f)
 
+        # Determine the correct key
+        if "MONTHLY_ADJUSTED" in filename:
+            key = AlphaVantageExtractor.keyMonth
+            df = pd.DataFrame(data[key]).T  # transpose to get dates as index
+        elif "INCOME_STATEMENT" in filename or "BALANCE_SHEET" in filename or "CASH_FLOW" in filename:
+            key = AlphaVantageExtractor.keyReports
+            df = pd.DataFrame(data[key])
+        elif "EARNINGS" in filename:
+            key = AlphaVantageExtractor.keyEarnings
+            df = pd.DataFrame(data[key])
+        elif "SHARES_OUTSTANDING" in filename:
+            key = AlphaVantageExtractor.keyShares
+            df = pd.DataFrame(data[key])
+        else:
+            raise ValueError("Unknown file type for setting index.")
+
+        # Set date index
         if date_col:
             df[date_col] = pd.to_datetime(df[date_col])
             df.set_index(date_col, inplace=True)
@@ -88,27 +101,13 @@ class AlphaVantageTransformer:
 
         return df.sort_index()
 
-    def stripQuarterly(self, df: pd.DataFrame, key: str = None) -> pd.DataFrame:
-        """
-        Keep only quarterly data. For fundamentals, key is 'quarterlyReports' or 'quarterlyEarnings'.
-        For shares, key is 'data'.
-        """
-        if key:
-            df = pd.DataFrame(df[key])
-            df['date'] = pd.to_datetime(df['date'] if 'date' in df.columns else df['fiscalDateEnding'])
-            df.set_index('date', inplace=True)
-        return df.sort_index()
 
+    def stripQuarter(self):
+        pass 
 
-    def mergeIndex(self, df_core: pd.DataFrame, df_list: list) -> pd.DataFrame:
-        """
-        Align multiple quarterly DataFrames to the monthly core DataFrame index.
-        Forward-fill to prevent leakage.
-        """
-        merged = df_core.copy()
-        for df in df_list:
-            merged = merged.join(df.reindex(merged.index, method='ffill'))
-        return merged
+    def mergeIndex(self):
+        pass
+
 
     
 
