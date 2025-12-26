@@ -102,8 +102,34 @@ class AlphaVantageTransformer:
         return df.sort_index()
 
 
-    def stripQuarter(self):
-        pass 
+def stripQuarter(self, filename: str) -> pd.DataFrame:
+    """
+    Load Alpha Vantage fundamentals JSON and keep ONLY quarterly data.
+    Annual data is discarded.
+    """
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    if "INCOME_STATEMENT" in filename or "BALANCE_SHEET" in filename or "CASH_FLOW" in filename:
+        rows = data["quarterlyReports"]
+
+    elif "EARNINGS" in filename:
+        rows = data["quarterlyEarnings"]
+
+    elif "SHARES_OUTSTANDING" in filename:
+        rows = data["data"]  # already quarterly
+
+    else:
+        raise ValueError("stripQuarter only valid for fundamentals / shares")
+
+    df = pd.DataFrame(rows)
+
+    date_col = "date" if "date" in df.columns else "fiscalDateEnding"
+    df[date_col] = pd.to_datetime(df[date_col])
+    df.set_index(date_col, inplace=True)
+
+    return df.sort_index()
+
 
     def mergeIndex(self):
         pass
