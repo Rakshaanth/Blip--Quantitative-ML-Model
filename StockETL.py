@@ -160,9 +160,9 @@ class AlphaVantageTransformer:
             # (critical before reindexing / forward filling)
             df_q = df_q.sort_index()
 
-            # Prefix columns using source name to avoid collisions
-            source = df_q.attrs.get("source", "fundamental")
-            df_q = df_q.add_prefix(f"{source}_")
+            #In case of overlapping/ duplicate columns retain only one set
+            overlapping_cols = merged.columns.intersection(df_q.columns)
+            df_q = df_q.drop(columns=overlapping_cols)
 
             # Reindex quarterly data to monthly index:
             # - quarterly dates are matched to monthly dates
