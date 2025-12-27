@@ -131,8 +131,48 @@ def stripQuarter(self, filename: str) -> pd.DataFrame:
     return df.sort_index()
 
 
-    def mergeIndex(self):
-        pass
+def mergeIndex(self, df_monthly: pd.DataFrame, df_quarterly_list: list) -> pd.DataFrame:
+    """
+    Merge quarterly fundamentals into monthly price data.
+
+    df_monthly:
+        DataFrame indexed by monthly dates (e.g., prices).
+        This is the master time index.
+
+    df_quarterly_list:
+        List of DataFrames indexed by quarterly dates
+        (income, balance sheet, cash flow, shares, etc.)
+
+    Returns:
+        Single DataFrame with monthly rows and
+        quarterly values forward-filled after report dates.
+    """
+
+    # Start with a copy of monthly data so original is untouched
+    merged = df_monthly.copy()
+
+    # Loop through each quarterly fundamentals DataFrame
+    for df_q in df_quarterly_list:
+
+        # Ensure quarterly data is ordered by time
+        # (critical before reindexing / forward filling)
+        df_q = df_q.sort_index()
+
+        # Reindex quarterly data to monthly index:
+        # - quarterly dates are matched to monthly dates
+        # - values are forward-filled AFTER the quarter date
+        # - months before first quarter remain NaN (no leakage)
+        aligned_q = df_q.reindex(
+            merged.index,
+            method="ffill"
+        )
+
+        # Join the aligned quarterly columns onto the monthly DataFrame
+        merged = merged.join(aligned_q)
+
+    # Return the fully merged monthly + quarterly dataset
+    return merged
+
 
 
     
