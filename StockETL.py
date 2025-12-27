@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 import time
 import pandas as pd
+ 
 
 load_dotenv()
 
@@ -39,7 +40,7 @@ class AlphaVantageExtractor:
     
     def StoreJSON(self, function:str):
         SYMBOL = "ORCL"
-        OUT_DIR = Path("data/raw/prices")
+        OUT_DIR = Path("data/raw/metrics")
         OUT_DIR.mkdir(parents=True, exist_ok=True)
 
         data = self.APIFetch(function)
@@ -127,6 +128,8 @@ class AlphaVantageTransformer:
         date_col = "date" if "date" in df.columns else "fiscalDateEnding"
         df[date_col] = pd.to_datetime(df[date_col])
         df.set_index(date_col, inplace=True)
+        df.attrs["source"] = Path(filename).stem
+
 
         return df.sort_index()
 
@@ -153,47 +156,60 @@ class AlphaVantageTransformer:
 
         # Loop through each quarterly fundamentals DataFrame
         for df_q in df_quarterly_list:
-
             # Ensure quarterly data is ordered by time
             # (critical before reindexing / forward filling)
             df_q = df_q.sort_index()
+
+            # Prefix columns using source name to avoid collisions
+            source = df_q.attrs.get("source", "fundamental")
+            df_q = df_q.add_prefix(f"{source}_")
 
             # Reindex quarterly data to monthly index:
             # - quarterly dates are matched to monthly dates
             # - values are forward-filled AFTER the quarter date
             # - months before first quarter remain NaN (no leakage)
-            aligned_q = df_q.reindex(
-                merged.index,
-                method="ffill"
-            )
-
+            aligned_q = df_q.reindex(merged.index, method="ffill")
             # Join the aligned quarterly columns onto the monthly DataFrame
             merged = merged.join(aligned_q)
 
         # Return the fully merged monthly + quarterly dataset
         return merged
 
+class AlphaVantageLoader:
+    def saveFile(self, df: pd.DataFrame, filename: str) -> None:
+        out_path = Path(filename)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if out_path.suffix == ".csv":
+            df.to_csv(out_path)
+        elif out_path.suffix == ".xlsx":
+            df.to_excel(out_path)
+        else:
+            raise ValueError("Unsupported file type")
+
+        print(f"Saved file to {out_path}")
 
 
     
-
 
 
 
 if __name__ == "__main__":
     extract = AlphaVantageExtractor()
     transform = AlphaVantageTransformer()
+    load = AlphaVantageLoader()
     
-    df_monthlyPrice = transform.setIndex("ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
+    df_monthlyPrice = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
 
-    df_quartlerylyList = ["ORCL_INCOME_STATEMENT.json",
-                          "ORCL_BALANCE_SHEET.json",
-                          "ORCL_CASH_FLOW.json",
-                          "ORCL_EARNINGS.json",
-                          "ORCL_SHARES_OUTSTANDING.json"
-                          ]
+    df_quartlerylyList = ["data/raw/metrics/ORCL_BALANCE_SHEET.json",
+                       "data/raw/metrics/ORCL_CASH_FLOW.json",
+                        "data/raw/metrics/ORCL_INCOME_STATEMENT.json",
+                        "data/raw/metrics/ORCL_EARNINGS.json",
+                        "data/raw/metrics/ORCL_SHARES_OUTSTANDING.json"] 
 
     df_quartlerylyData = [transform.stripQuarter(i) for i in df_quartlerylyList]
-    
 
     df_merged = transform.mergeIndex(df_monthlyPrice, df_quartlerylyData)
+
+    load.saveFile(df_merged, "data/processed/ORCL_merged.csv")
+    load.saveFile(df_merged, "data/processed/ORCL_merged.xlsx")
