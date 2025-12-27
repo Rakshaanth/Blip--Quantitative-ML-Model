@@ -184,4 +184,16 @@ if __name__ == "__main__":
     extract = AlphaVantageExtractor()
     transform = AlphaVantageTransformer()
     
+    df_monthlyPrice = transform.setIndex("ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
 
+    df_quartlerylyList = ["ORCL_INCOME_STATEMENT.json",
+                          "ORCL_BALANCE_SHEET.json",
+                          "ORCL_CASH_FLOW.json",
+                          "ORCL_EARNINGS.json",
+                          "ORCL_SHARES_OUTSTANDING.json"
+                          ]
+
+    df_quartlerylyData = [transform.stripQuarter(i) for i in df_quartlerylyList]
+    
+
+    df_merged = transform.mergeIndex(df_monthlyPrice, df_quartlerylyData)
