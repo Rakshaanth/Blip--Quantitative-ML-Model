@@ -102,76 +102,76 @@ class AlphaVantageTransformer:
         return df.sort_index()
 
 
-def stripQuarter(self, filename: str) -> pd.DataFrame:
-    """
-    Load Alpha Vantage fundamentals JSON and keep ONLY quarterly data.
-    Annual data is discarded.
-    """
-    with open(filename, "r") as f:
-        data = json.load(f)
+    def stripQuarter(self, filename: str) -> pd.DataFrame:
+        """
+        Load Alpha Vantage fundamentals JSON and keep ONLY quarterly data.
+        Annual data is discarded.
+        """
+        with open(filename, "r") as f:
+            data = json.load(f)
 
-    if "INCOME_STATEMENT" in filename or "BALANCE_SHEET" in filename or "CASH_FLOW" in filename:
-        rows = data["quarterlyReports"]
+        if "INCOME_STATEMENT" in filename or "BALANCE_SHEET" in filename or "CASH_FLOW" in filename:
+            rows = data["quarterlyReports"]
 
-    elif "EARNINGS" in filename:
-        rows = data["quarterlyEarnings"]
+        elif "EARNINGS" in filename:
+            rows = data["quarterlyEarnings"]
 
-    elif "SHARES_OUTSTANDING" in filename:
-        rows = data["data"]  # already quarterly
+        elif "SHARES_OUTSTANDING" in filename:
+            rows = data["data"]  # already quarterly
 
-    else:
-        raise ValueError("stripQuarter only valid for fundamentals / shares")
+        else:
+            raise ValueError("stripQuarter only valid for fundamentals / shares")
 
-    df = pd.DataFrame(rows)
+        df = pd.DataFrame(rows)
 
-    date_col = "date" if "date" in df.columns else "fiscalDateEnding"
-    df[date_col] = pd.to_datetime(df[date_col])
-    df.set_index(date_col, inplace=True)
+        date_col = "date" if "date" in df.columns else "fiscalDateEnding"
+        df[date_col] = pd.to_datetime(df[date_col])
+        df.set_index(date_col, inplace=True)
 
-    return df.sort_index()
+        return df.sort_index()
 
 
-def mergeIndex(self, df_monthly: pd.DataFrame, df_quarterly_list: list) -> pd.DataFrame:
-    """
-    Merge quarterly fundamentals into monthly price data.
+    def mergeIndex(self, df_monthly: pd.DataFrame, df_quarterly_list: list) -> pd.DataFrame:
+        """
+        Merge quarterly fundamentals into monthly price data.
 
-    df_monthly:
-        DataFrame indexed by monthly dates (e.g., prices).
-        This is the master time index.
+        df_monthly:
+            DataFrame indexed by monthly dates (e.g., prices).
+            This is the master time index.
 
-    df_quarterly_list:
-        List of DataFrames indexed by quarterly dates
-        (income, balance sheet, cash flow, shares, etc.)
+        df_quarterly_list:
+            List of DataFrames indexed by quarterly dates
+            (income, balance sheet, cash flow, shares, etc.)
 
-    Returns:
-        Single DataFrame with monthly rows and
-        quarterly values forward-filled after report dates.
-    """
+        Returns:
+            Single DataFrame with monthly rows and
+            quarterly values forward-filled after report dates.
+        """
 
-    # Start with a copy of monthly data so original is untouched
-    merged = df_monthly.copy()
+        # Start with a copy of monthly data so original is untouched
+        merged = df_monthly.copy()
 
-    # Loop through each quarterly fundamentals DataFrame
-    for df_q in df_quarterly_list:
+        # Loop through each quarterly fundamentals DataFrame
+        for df_q in df_quarterly_list:
 
-        # Ensure quarterly data is ordered by time
-        # (critical before reindexing / forward filling)
-        df_q = df_q.sort_index()
+            # Ensure quarterly data is ordered by time
+            # (critical before reindexing / forward filling)
+            df_q = df_q.sort_index()
 
-        # Reindex quarterly data to monthly index:
-        # - quarterly dates are matched to monthly dates
-        # - values are forward-filled AFTER the quarter date
-        # - months before first quarter remain NaN (no leakage)
-        aligned_q = df_q.reindex(
-            merged.index,
-            method="ffill"
-        )
+            # Reindex quarterly data to monthly index:
+            # - quarterly dates are matched to monthly dates
+            # - values are forward-filled AFTER the quarter date
+            # - months before first quarter remain NaN (no leakage)
+            aligned_q = df_q.reindex(
+                merged.index,
+                method="ffill"
+            )
 
-        # Join the aligned quarterly columns onto the monthly DataFrame
-        merged = merged.join(aligned_q)
+            # Join the aligned quarterly columns onto the monthly DataFrame
+            merged = merged.join(aligned_q)
 
-    # Return the fully merged monthly + quarterly dataset
-    return merged
+        # Return the fully merged monthly + quarterly dataset
+        return merged
 
 
 
