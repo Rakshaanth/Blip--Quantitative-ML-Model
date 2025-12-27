@@ -34,10 +34,6 @@ class DataFormatter:
 
 if __name__ == "__main__":
     Format = DataFormatter()
-    # Format.showColumns(pd.read_csv(r"C:\Users\Dell\Desktop\Python baby!\Stage 3\data\processed\ORCL_merged.csv"))
-    # print("\n")
-    # Format.dropCurrencyColumn(pd.read_csv(r"C:\Users\Dell\Desktop\Python baby!\Stage 3\data\processed\ORCL_merged.csv"))
-    # print("\n")
     Format.dropSpams(pd.read_csv(r"C:\Users\Dell\Desktop\Python baby!\Stage 3\data\processed\ORCL_merged.csv"))
 
 
