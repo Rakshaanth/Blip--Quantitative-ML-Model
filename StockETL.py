@@ -192,14 +192,71 @@ class AlphaVantageTransformer:
             print("Core Metrics Indexed by Date")
             return df
         return df
-    
-    def merge_core_fundamentals(self, core_df: pd.DataFrame, fund_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Merge core metrics DataFrame with fundamentals DataFrame on date index.
-        """
-        # Index of core is mothly dates, fundamentals is quarterly dates
-        merged_df = pd.merge_asof()
-        pass
+
+    def merge_core_fundamentals(self, core_filename: str, fund_filename: str) -> pd.DataFrame:
+        '''
+        Merge core monthly metrics (Excel) with quarterly fundamentals (Excel) using ONLY `reportedDate`.
+
+        Requirements:
+        - `core_filename` must be an Excel file with a DatetimeIndex of monthly periods.
+        - `fund_filename` must contain a column exactly named `reportedDate` (no other date columns are considered).
+        - If `reportedDate`.day >= 15, the report is considered to belong to the next month; otherwise it belongs to its month.
+        - Each monthly row is matched to the most recent adjusted quarterly report whose adjusted month is <= that month.
+
+        The fundamentals columns are attached as-is (no prefixing or renaming).
+        '''
+        # Load core monthly file (index expected to be dates)
+        core = pd.read_excel(core_filename, index_col=0, parse_dates=True)
+        if not isinstance(core.index, pd.DatetimeIndex):
+            core.index = pd.to_datetime(core.index)
+        core = core.sort_index()
+
+        # Load fundamentals file; require exact 'reportedDate' column
+        fund = pd.read_excel(fund_filename)
+        if 'reportedDate' not in fund.columns:
+            raise ValueError("Fundamentals file must contain a 'reportedDate' column")
+
+        fund = fund.copy()
+        fund['reportedDate'] = pd.to_datetime(fund['reportedDate'])
+        fund_orig_cols = fund.columns.tolist()  # keep original column order for attachment
+
+        # Compute effective date for mapping: if day >= 15 move to next month
+        mask = fund['reportedDate'].dt.day >= 15
+        fund.loc[mask, 'effective'] = fund.loc[mask, 'reportedDate'] + pd.offsets.MonthBegin(1)
+        fund.loc[~mask, 'effective'] = fund.loc[~mask, 'reportedDate']
+        fund['effective_month_start'] = fund['effective'].dt.to_period('M').dt.to_timestamp()
+
+        # Prepare core mapping table with month period start
+        core_map = pd.DataFrame({'core_date': core.index})
+        core_map['month_start'] = core_map['core_date'].dt.to_period('M').dt.to_timestamp()
+
+        # Sort inputs for merge_asof
+        fund_sorted = fund.sort_values('effective_month_start')
+        core_map_sorted = core_map.sort_values('month_start')
+
+        # For each month, find the most recent fundamentals row whose effective_month_start <= month_start
+        merged_map = pd.merge_asof(
+            core_map_sorted,
+            fund_sorted,
+            left_on='month_start',
+            right_on='effective_month_start',
+            direction='backward',
+            allow_exact_matches=True
+        )
+
+        # Attach only the original fund columns (including reportedDate)
+        merged_attach = merged_map.set_index('core_date')[fund_orig_cols]
+
+        # Join with core (left join to keep monthly index)
+        result = core.join(merged_attach, how='left')
+
+        # Save result
+        out_path = Path('data/processed/ORCL_CoreMonthly_Fundamentals_Merged.xlsx')
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        result.to_excel(out_path)
+        print(f"Merged core and fundamentals saved to {out_path}")
+
+        return result
 
 
 
@@ -236,7 +293,11 @@ if __name__ == "__main__":
     "data/raw/metrics/ORCL_SHARES_OUTSTANDING.json"
 ]    
 
-    fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
-    merged_df = transform.merge_fundamentals(fundamental_dfs)
-    FundamentalsIndexed = transform.setIndex("data/processed/ORCL_Fundamentals_Merged.xlsx")
-    CoreMetricsIndexed = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
+    # fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
+    # merged_df = transform.merge_fundamentals(fundamental_dfs)
+    # FundamentalsIndexed = transform.setIndex("data/processed/ORCL_Fundamentals_Merged.xlsx")
+    # CoreMetricsIndexed = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
+    transform.merge_core_fundamentals(
+        core_filename="data/processed/ORCL_Monthly_Adjusted_Index.xlsx",
+        fund_filename="data/processed/ORCL_Fundamentals_Merged.xlsx"
+    )
