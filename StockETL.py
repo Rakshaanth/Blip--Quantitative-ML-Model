@@ -164,6 +164,7 @@ def merge_fundamentals(fundamental_dfs: list) -> pd.DataFrame:
 
     # Sort by date column
     merged = merged.sort_values(by=date_col)
+    mergedFile = merged.to_excel("data/processed/ORCL_Fundamentals_Merged.xlsx")
     return merged
 
 
