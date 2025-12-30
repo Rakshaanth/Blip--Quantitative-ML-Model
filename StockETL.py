@@ -100,6 +100,7 @@ class AlphaVantageTransformer:
         #convert date column to datetime
         df[date_col] = pd.to_datetime(df[date_col])
         df.attrs['date_col'] = date_col # Store date column name in attrs for later merge use
+        print(f"Set index for {filename} on {date_col}")
 
         return df
 
@@ -131,41 +132,66 @@ class AlphaVantageTransformer:
         df = pd.DataFrame(rows)
         df[date_col] = pd.to_datetime(df[date_col])
         df.attrs["date_col"] = date_col
+        print(f"Processed {filename}, keeping only quarterly data.")
         return df.sort_values(by=date_col)
-    
-def merge_fundamentals(fundamental_dfs: list) -> pd.DataFrame:
-    """
-    Merge multiple fundamental DataFrames based on their fiscal/date column.
-    """
-    if not fundamental_dfs:
-        return pd.DataFrame()
 
-    # Start with first DataFrame
-    merged = fundamental_dfs[0].copy()
-    date_col = merged.attrs.get("date_col", "fiscalDateEnding")
+    def merge_fundamentals(self, fundamental_dfs: list) -> pd.DataFrame:
+        """
+        Merge multiple fundamental DataFrames based on their fiscal/date column.
+        """
+        if not fundamental_dfs:
+            return pd.DataFrame()
 
-    for df in fundamental_dfs[1:]:
-        df_copy = df.copy()
-        df_date_col = df_copy.attrs.get("date_col", "fiscalDateEnding")
+        # Start with first DataFrame
+        merged = fundamental_dfs[0].copy()
+        date_col = merged.attrs.get("date_col", "fiscalDateEnding")
 
-        # Drop overlapping columns
-        overlapping_cols = merged.columns.intersection(df_copy.columns)
-        overlapping_cols = [c for c in overlapping_cols if c != date_col and c != df_date_col]
-        df_copy = df_copy.drop(columns=overlapping_cols, errors='ignore')
+        for df in fundamental_dfs[1:]:
+            df_copy = df.copy()
+            df_date_col = df_copy.attrs.get("date_col", "fiscalDateEnding")
 
-        # Merge on the date column
-        merged = pd.merge(
-            merged,
-            df_copy,
-            left_on=date_col,
-            right_on=df_date_col,
-            how="outer"
-        )
+            # Drop overlapping columns
+            overlapping_cols = merged.columns.intersection(df_copy.columns)
+            overlapping_cols = [c for c in overlapping_cols if c != date_col and c != df_date_col]
+            df_copy = df_copy.drop(columns=overlapping_cols, errors='ignore')
 
-    # Sort by date column
-    merged = merged.sort_values(by=date_col)
-    mergedFile = merged.to_excel("data/processed/ORCL_Fundamentals_Merged.xlsx")
-    return merged
+            # Merge on the date column
+            merged = pd.merge(
+                merged,
+                df_copy,
+                left_on=date_col,
+                right_on=df_date_col,
+                how="outer"
+            )
+
+        # Sort by date column
+        merged = merged.sort_values(by=date_col)
+        mergedFile = merged.to_excel("data/processed/ORCL_Fundamentals_Merged.xlsx")
+        print("Fundamentals Merged and Saved as excel")
+        return merged
+
+    def setIndex(self, filename: str) -> pd.DataFrame:
+
+        if "Fundamentals_Merged" in filename:
+
+            df = pd.read_excel(filename)
+            date_col = "reportedDate"
+            df[date_col] = pd.to_datetime(df[date_col])
+            df = df.set_index(date_col)
+            print("Fundamentals Indexed by Reported Date")
+        # Core Metrics
+        elif "TIME_SERIES_MONTHLY_ADJUSTED" in filename:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+                rows = data["Monthly Adjusted Time Series"] 
+                df = pd.DataFrame.from_dict(rows, orient='index') #
+                df.index = pd.to_datetime(df.index)
+                df = df.sort_index()
+
+            IndexmonthlyAdjusted = df.to_excel("data/processed/ORCL_Monthly_Adjusted_Index.xlsx")
+            print("Core Metrics Indexed by Date")
+            return df
+        return df
 
 
 
@@ -202,5 +228,7 @@ if __name__ == "__main__":
     "data/raw/metrics/ORCL_SHARES_OUTSTANDING.json"
 ]    
 
-fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
-merged_df = merge_fundamentals(fundamental_dfs)
+    fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
+    merged_df = transform.merge_fundamentals(fundamental_dfs)
+    FundamentalsIndexed = transform.setIndex("data/processed/ORCL_Fundamentals_Merged.xlsx")
+    CoreMetricsIndexed = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
