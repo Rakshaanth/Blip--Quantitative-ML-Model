@@ -193,6 +193,7 @@ class AlphaVantageTransformer:
             return df
         return df
 
+class AlphaVantageLoader:
     def merge_core_fundamentals(self, core_filename: str, fund_filename: str) -> pd.DataFrame:
         '''
         Merge core monthly metrics (Excel) with quarterly fundamentals (Excel) using ONLY `reportedDate`.
@@ -283,7 +284,7 @@ class AlphaVantageTransformer:
 if __name__ == "__main__":
     extract = AlphaVantageExtractor()
     transform = AlphaVantageTransformer()
-    # load = AlphaVantageLoader()
+    load = AlphaVantageLoader()
 
     FundamentalFiles = [
     "data/raw/metrics/ORCL_BALANCE_SHEET.json",
@@ -297,7 +298,7 @@ if __name__ == "__main__":
     # merged_df = transform.merge_fundamentals(fundamental_dfs)
     # FundamentalsIndexed = transform.setIndex("data/processed/ORCL_Fundamentals_Merged.xlsx")
     # CoreMetricsIndexed = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
-    transform.merge_core_fundamentals(
+    load.merge_core_fundamentals(
         core_filename="data/processed/ORCL_Monthly_Adjusted_Index.xlsx",
         fund_filename="data/processed/ORCL_Fundamentals_Merged.xlsx"
     )
