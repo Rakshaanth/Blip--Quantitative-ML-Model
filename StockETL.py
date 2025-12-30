@@ -192,6 +192,14 @@ class AlphaVantageTransformer:
             print("Core Metrics Indexed by Date")
             return df
         return df
+    
+    def merge_core_fundamentals(self, core_df: pd.DataFrame, fund_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge core metrics DataFrame with fundamentals DataFrame on date index.
+        """
+        # Index of core is mothly dates, fundamentals is quarterly dates
+        merged_df = pd.merge_asof()
+        pass
 
 
 
