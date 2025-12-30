@@ -262,24 +262,6 @@ class AlphaVantageLoader:
 
 
 
-'''class AlphaVantageLoader:
-    def saveFile(self, df: pd.DataFrame, filename: str) -> None:
-        out_path = Path(filename)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if out_path.suffix == ".csv":
-            df.to_csv(out_path)
-        elif out_path.suffix == ".xlsx":
-            df.to_excel(out_path)
-        else:
-            raise ValueError("Unsupported file type")
-
-        print(f"Saved file to {out_path}")
-'''
-
-    
-
-
 
 if __name__ == "__main__":
     extract = AlphaVantageExtractor()
