@@ -83,13 +83,19 @@ class formatData:
         return df
 
 
-    def saveFile(self, df):
+    def saveFileparquet(self, df):
 
         df.to_parquet("data/final/ORCL_features.parquet", index = False)
-        print("Production file saved.")
+        print("Production file saved as '.praquet'.")
 
         return df
 
+    def saveFileCSV(self, df):
+
+        df.to_csv("data/final/ORCL_features.csv", index = False)
+        print("Production file saved as 'CSV'.")
+
+        return df
 
 
 
@@ -120,4 +126,5 @@ if __name__ == "__main__":
 
     df = format.addDerivedColumns(df, derived_functions)
     df = format.cleanColumns(df)
-    format.saveFile(df)
+    # format.saveFile(df)
+    format.saveFileCSV(df)
