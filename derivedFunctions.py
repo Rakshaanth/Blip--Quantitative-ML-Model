@@ -18,7 +18,7 @@ def safe_divide(a, b):
     return np.where((b == 0) | (b.isna()), np.nan, a / b)
 
 def monthly_return(df):
-    df["monthly_return"] = df["adjusted close"].pct_change()
+    df["monthly_return"] = df["5. adjusted close"].pct_change()
     return df
 
 
@@ -29,13 +29,13 @@ def monthly_volatility(df, window=3):
 
 def price_range_pct(df):
     df["price_range_pct"] = safe_divide(
-        df["high"] - df["low"], df["close"]
+        df["2. high"] - df["3. low"], df["4. close"]
     )
     return df
 
 
 def volume_change(df):
-    df["volume_change"] = df["volume"].pct_change()
+    df["volume_change"] = df["6. volume"].pct_change()
     return df
 
 def profit_margin(df):
@@ -45,7 +45,7 @@ def profit_margin(df):
     return df
 
 
-def perating_margin(df):
+def operating_margin(df):
     df["operating_margin"] = safe_divide(
         df["operatingIncome"], df["totalRevenue"]
     )
