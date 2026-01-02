@@ -92,7 +92,7 @@ class formatData:
 
     def saveFileCSV(self, df):
 
-        df.to_csv("data/final/ORCL_features.csv", index = False)
+        df.to_csv("data/final/ORCL_features.csv", index = True)
         print("Production file saved as 'CSV'.")
 
         return df
@@ -127,4 +127,4 @@ if __name__ == "__main__":
     df = format.addDerivedColumns(df, derived_functions)
     df = format.cleanColumns(df)
     # format.saveFile(df)
-    format.saveFileCSV(df)
+    format.saveFileparquet(df)
