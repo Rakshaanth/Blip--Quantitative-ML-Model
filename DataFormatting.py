@@ -1,5 +1,6 @@
 
 import pandas as pd
+from StockETL import fileURL
 from DerivedFunctions import (
     monthly_return,
     monthly_volatility,
@@ -102,7 +103,15 @@ class formatData:
 if __name__ == "__main__":
 
     format = formatData()
-    # format.duplicateFile(r"data\processed\ORCL_CoreMonthly_Fundamentals_Merged.xlsx")
+    Symbol = "ORCL"
+
+    format.duplicateFile(fileURL)
+    fileURL  = f"data\processed\{Symbol}_CoreMonthly_Fundamentals_Merged_copy.xlsx"
+    
+    ''' WILL NOT WORK, creat fileURL var in StockETL'''
+
+
+
     columnsRemove = ["Unnamed: 0", "date", "reportedCurrency", "fiscalDateEnding", "reportedDate", "reportTime", "accumulatedDepreciationAmortizationPPE", "investments", "longTermInvestments", "otherCurrentAssets", "otherNonCurrentAssets", "deferredRevenue", "deferredRevenue", "currentDebt", "capitalLeaseObligations", "currentLongTermDebt", "longTermDebtNoncurrent", "otherCurrentLiabilities", "otherNonCurrentLiabilities", "treasuryStock", "commonStock", "paymentsForOperatingActivities", "proceedsFromOperatingActivities", "changeInOperatingLiabilities", "changeInOperatingAssets", "changeInReceivables", "changeInInventory", "profitLoss", "proceedsFromRepaymentsOfShortTermDebt", "paymentsForRepurchaseOfCommonStock", "paymentsForRepurchaseOfEquity", "paymentsForRepurchaseOfPreferredStock", "dividendPayoutCommonStock", "dividendPayoutPreferredStock", "proceedsFromIssuanceOfCommonStock", "proceedsFromIssuanceOfLongTermDebtAndCapitalSecuritiesNet", "proceedsFromIssuanceOfPreferredStock", "proceedsFromSaleOfTreasuryStock", "changeInExchangeRate", "costOfRevenue", "costofGoodsAndServicesSold", "investmentIncomeNet", "netInterestIncome", "interestIncome", "nonInterestIncome", "otherNonOperatingIncome", "depreciation", "incomeTaxExpense", "interestAndDebtExpense", "comprehensiveIncomeNetOfTax", "surprise"]
     
     derived_functions = [
@@ -122,9 +131,9 @@ if __name__ == "__main__":
     ]
 
     derivedColumns =[]
-    df = format.deleteColumns(r"data\processed\ORCL_CoreMonthly_Fundamentals_Merged_copy.xlsx", columnsRemove)
+    df = format.deleteColumns(fileURL, columnsRemove)
 
     df = format.addDerivedColumns(df, derived_functions)
     df = format.cleanColumns(df)
-    # format.saveFile(df)
-    format.saveFileparquet(df)
+    # format.saveFileCSV(df)
+    # format.saveFileparquet(df)
