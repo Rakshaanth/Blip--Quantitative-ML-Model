@@ -1,6 +1,6 @@
 
 import pandas as pd
-from StockETL import fileURL
+# from StockETL import fileURL
 from DerivedFunctions import (
     monthly_return,
     monthly_volatility,
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     format = formatData()
     Symbol = "ORCL"
 
-    format.duplicateFile(fileURL)
+    # format.duplicateFile(fileURL)
     fileURL  = f"data\processed\{Symbol}_CoreMonthly_Fundamentals_Merged_copy.xlsx"
     
     ''' WILL NOT WORK, creat fileURL var in StockETL'''
