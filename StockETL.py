@@ -11,6 +11,8 @@ import pandas as pd
 
 load_dotenv()
 
+SYMBOL = "ORCL"
+
 core_metric = "TIME_SERIES_MONTHLY_ADJUSTED" # different key than fundamental metrics
 fundamental_metrics = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW","EARNINGS", "SHARES_OUTSTANDING"] # same URL and key format
 
@@ -19,7 +21,7 @@ date_colFundamentals = "fiscalDateEnding" # for INCOME_STATEMENT, BALANCE_SHEET,
 date_colShares = "date" # for SHARES_OUTSTANDING
 
 
-class AlphaVantageExtractor:
+class AlphaVantageExtractor: 
 
     ''' Keys within JSON responses for corresponding function(s)'''
     keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
@@ -30,7 +32,7 @@ class AlphaVantageExtractor:
 
     def APIFetch(self, function: str) -> dict:
         API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")  # Replace with your actual API key or load from environment
-        SYMBOL = "ORCL"
+        global SYMBOL
         
         url = f'https://www.alphavantage.co/query?function={function}&symbol={SYMBOL}&apikey={API_KEY}'
         r = requests.get(url)
@@ -39,7 +41,7 @@ class AlphaVantageExtractor:
         return data
     
     def StoreJSON(self, function:str):
-        SYMBOL = "ORCL"
+        global SYMBOL
         OUT_DIR = Path("data/raw/metrics")
         OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -47,7 +49,7 @@ class AlphaVantageExtractor:
 
         ''' Handle different function naming conventions for file saving '''
 
-        if function == self.core_metric or function in self.fundamental_metrics:
+        if function == core_metric or function in fundamental_metrics:
             filename = f"{SYMBOL.replace(':', '_')}_{function}.json"
 
             try:
@@ -56,10 +58,10 @@ class AlphaVantageExtractor:
                         raise ValueError(f"Expected key '{self.keyMonth}' not found in response.")
                 elif function in self.fundamental_metrics:
                     if function in ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"]:
-                        if not any(key in data for key in self.keyReports):
+                        if self.keyReports not in data:
                             raise ValueError(f"Expected keys '{self.keyReports}' not found in response.")
                     elif function == "EARNINGS":
-                        if not any(key in data for key in self.keyEarnings):
+                        if self.keyEarnings not in data:
                             raise ValueError(f"Expected keys '{self.keyEarnings}' not found in response.")
                     elif function == "SHARES_OUTSTANDING":
                         if self.keyShares not in data:
@@ -82,7 +84,7 @@ class AlphaVantageTransformer:
             data = json.load(f)
         
         #Determine key from filename and set date column
-        if  "INCOME_STATEMENT"or  "BALANCE_SHEET" or "CASH_FLOW" in filename:
+        if ("INCOME_STATEMENT" in filename or "BALANCE_SHEET" in filename or "CASH_FLOW" in filename):
             rows = data["quarterlyReports"]
             date_col = "fiscalDateEnding"
         elif "EARNINGS" in filename:
@@ -166,7 +168,7 @@ class AlphaVantageTransformer:
 
         # Sort by date column
         merged = merged.sort_values(by=date_col)
-        mergedFile = merged.to_excel("data/processed/ORCL_Fundamentals_Merged.xlsx")
+        mergedFile = merged.to_excel(f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx")
         print("Fundamentals Merged and Saved as excel")
         return merged
 
@@ -188,7 +190,7 @@ class AlphaVantageTransformer:
                 df.index = pd.to_datetime(df.index)
                 df = df.sort_index()
 
-            IndexmonthlyAdjusted = df.to_excel("data/processed/ORCL_Monthly_Adjusted_Index.xlsx")
+            IndexmonthlyAdjusted = df.to_excel(f"data/processed/{SYMBOL}_Monthly_Adjusted_Index.xlsx")
             print("Core Metrics Indexed by Date")
             return df
         return df
@@ -252,7 +254,7 @@ class AlphaVantageLoader:
         result = core.join(merged_attach, how='left')
 
         # Save result
-        out_path = Path('data/processed/ORCL_CoreMonthly_Fundamentals_Merged.xlsx')
+        out_path = Path(f"data/processed/{SYMBOL}_CoreMonthly_Fundamentals_Merged.xlsx")
         out_path.parent.mkdir(parents=True, exist_ok=True)
         result.to_excel(out_path)
         print(f"Merged core and fundamentals saved to {out_path}")
@@ -269,18 +271,18 @@ if __name__ == "__main__":
     load = AlphaVantageLoader()
 
     FundamentalFiles = [
-    "data/raw/metrics/ORCL_BALANCE_SHEET.json",
-    "data/raw/metrics/ORCL_CASH_FLOW.json",
-    "data/raw/metrics/ORCL_INCOME_STATEMENT.json",
-    "data/raw/metrics/ORCL_EARNINGS.json",
-    "data/raw/metrics/ORCL_SHARES_OUTSTANDING.json"
+    f"data/raw/metrics/{SYMBOL}_BALANCE_SHEET.json",
+    f"data/raw/metrics/{SYMBOL}_CASH_FLOW.json",
+    f"data/raw/metrics/{SYMBOL}_INCOME_STATEMENT.json",
+    f"data/raw/metrics/{SYMBOL}_EARNINGS.json",
+    f"data/raw/metrics/{SYMBOL}_SHARES_OUTSTANDING.json"
 ]    
 
-    # fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
-    # merged_df = transform.merge_fundamentals(fundamental_dfs)
-    # FundamentalsIndexed = transform.setIndex("data/processed/ORCL_Fundamentals_Merged.xlsx")
-    # CoreMetricsIndexed = transform.setIndex("data/raw/metrics/ORCL_TIME_SERIES_MONTHLY_ADJUSTED.json")
+    fundamental_dfs = [transform.stripQuarter(f) for f in FundamentalFiles]
+    merged_df = transform.merge_fundamentals(fundamental_dfs)
+    FundamentalsIndexed = transform.setIndex(f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx")
+    CoreMetricsIndexed = transform.setIndex(f"data/raw/metrics/{SYMBOL}_TIME_SERIES_MONTHLY_ADJUSTED.json")
     load.merge_core_fundamentals(
-        core_filename="data/processed/ORCL_Monthly_Adjusted_Index.xlsx",
-        fund_filename="data/processed/ORCL_Fundamentals_Merged.xlsx"
+        core_filename=f"data/processed/{SYMBOL}_Monthly_Adjusted_Index.xlsx",
+        fund_filename=f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx"
     )
