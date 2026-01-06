@@ -286,3 +286,5 @@ if __name__ == "__main__":
         core_filename=f"data/processed/{SYMBOL}_Monthly_Adjusted_Index.xlsx",
         fund_filename=f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx"
     )
+
+    fileURL = load.out_path
