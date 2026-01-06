@@ -53,10 +53,10 @@ class AlphaVantageExtractor:
             filename = f"{SYMBOL.replace(':', '_')}_{function}.json"
 
             try:
-                if function == self.core_metric:
+                if function == core_metric:
                     if self.keyMonth not in data:
                         raise ValueError(f"Expected key '{self.keyMonth}' not found in response.")
-                elif function in self.fundamental_metrics:
+                elif function in fundamental_metrics:
                     if function in ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"]:
                         if self.keyReports not in data:
                             raise ValueError(f"Expected keys '{self.keyReports}' not found in response.")
@@ -259,7 +259,7 @@ class AlphaVantageLoader:
         result.to_excel(out_path)
         print(f"Merged core and fundamentals saved to {out_path}")
 
-        return result
+        return result, out_path
 
 
 
