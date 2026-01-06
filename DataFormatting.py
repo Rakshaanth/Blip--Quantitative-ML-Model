@@ -1,7 +1,7 @@
 
 import pandas as pd
 # from StockETL import fileURL
-from DerivedFunctions import (
+from derivedFunctions import (
     monthly_return,
     monthly_volatility,
     price_range_pct,
