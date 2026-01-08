@@ -1,6 +1,6 @@
 
 import pandas as pd
-from cerivedFunctions import (
+from DerivedFunctions import (
     monthly_return,
     monthly_volatility,
     price_range_pct,
