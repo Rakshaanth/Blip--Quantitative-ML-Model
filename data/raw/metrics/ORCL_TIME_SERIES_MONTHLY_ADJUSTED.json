@@ -2,17 +2,26 @@
     "Meta Data": {
         "1. Information": "Monthly Adjusted Prices and Volumes",
         "2. Symbol": "ORCL",
-        "3. Last Refreshed": "2025-12-24",
+        "3. Last Refreshed": "2026-01-08",
         "4. Time Zone": "US/Eastern"
     },
     "Monthly Adjusted Time Series": {
-        "2025-12-24": {
+        "2026-01-08": {
+            "1. open": "197.4700",
+            "2. high": "201.6900",
+            "3. low": "186.1500",
+            "4. close": "189.6700",
+            "5. adjusted close": "189.6700",
+            "6. volume": "84266336",
+            "7. dividend amount": "0.0000"
+        },
+        "2025-12-31": {
             "1. open": "200.5000",
             "2. high": "225.3200",
             "3. low": "177.0700",
-            "4. close": "197.4900",
-            "5. adjusted close": "197.4900",
-            "6. volume": "639662268",
+            "4. close": "194.9100",
+            "5. adjusted close": "194.9100",
+            "6. volume": "690225434",
             "7. dividend amount": "0.0000"
         },
         "2025-11-28": {

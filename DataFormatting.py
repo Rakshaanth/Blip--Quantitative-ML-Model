@@ -1,6 +1,5 @@
 
 import pandas as pd
-from StockETL import fileURL
 from DerivedFunctions import (
     monthly_return,
     monthly_volatility,
@@ -16,6 +15,7 @@ from DerivedFunctions import (
     ebitda_margin,
     interest_coverage
 )
+
 
 
 class formatData:
@@ -102,38 +102,64 @@ class formatData:
 
 if __name__ == "__main__":
 
-    format = formatData()
     Symbol = "ORCL"
+    original_file = rf"data\processed\{Symbol}_CoreMonthly_Fundamentals_Merged.xlsx"
 
-    # format.duplicateFile(fileURL)
-    fileURL  = f"data\processed\{Symbol}_CoreMonthly_Fundamentals_Merged_copy.xlsx"
-    
-    ''' WILL NOT WORK, creat fileURL var in StockETL'''
+    # Initialize the formatData class
+    format = formatData()
 
+    # Step 1: Duplicate the file
+    format.duplicateFile(original_file)
+    # After duplication, work with the copy
+    fileURL = rf"data\processed\{Symbol}_CoreMonthly_Fundamentals_Merged_copy.xlsx"
 
-
-    columnsRemove = ["Unnamed: 0", "date", "reportedCurrency", "fiscalDateEnding", "reportedDate", "reportTime", "accumulatedDepreciationAmortizationPPE", "investments", "longTermInvestments", "otherCurrentAssets", "otherNonCurrentAssets", "deferredRevenue", "deferredRevenue", "currentDebt", "capitalLeaseObligations", "currentLongTermDebt", "longTermDebtNoncurrent", "otherCurrentLiabilities", "otherNonCurrentLiabilities", "treasuryStock", "commonStock", "paymentsForOperatingActivities", "proceedsFromOperatingActivities", "changeInOperatingLiabilities", "changeInOperatingAssets", "changeInReceivables", "changeInInventory", "profitLoss", "proceedsFromRepaymentsOfShortTermDebt", "paymentsForRepurchaseOfCommonStock", "paymentsForRepurchaseOfEquity", "paymentsForRepurchaseOfPreferredStock", "dividendPayoutCommonStock", "dividendPayoutPreferredStock", "proceedsFromIssuanceOfCommonStock", "proceedsFromIssuanceOfLongTermDebtAndCapitalSecuritiesNet", "proceedsFromIssuanceOfPreferredStock", "proceedsFromSaleOfTreasuryStock", "changeInExchangeRate", "costOfRevenue", "costofGoodsAndServicesSold", "investmentIncomeNet", "netInterestIncome", "interestIncome", "nonInterestIncome", "otherNonOperatingIncome", "depreciation", "incomeTaxExpense", "interestAndDebtExpense", "comprehensiveIncomeNetOfTax", "surprise"]
-    
-    derived_functions = [
-    monthly_return,
-    monthly_volatility,
-    price_range_pct,
-    volume_change,
-    profit_margin,
-    operating_margin,
-    gross_margin,
-    current_ratio,
-    debt_to_equity,
-    free_cash_flow,
-    fcf_margin,
-    ebitda_margin,
-    interest_coverage
+    # Step 2: Columns to remove
+    columnsRemove = [
+        "Unnamed: 0", "date", "reportedCurrency", "fiscalDateEnding", "reportedDate",
+        "reportTime", "accumulatedDepreciationAmortizationPPE", "investments",
+        "longTermInvestments", "otherCurrentAssets", "otherNonCurrentAssets",
+        "deferredRevenue", "currentDebt", "capitalLeaseObligations", "currentLongTermDebt",
+        "longTermDebtNoncurrent", "otherCurrentLiabilities", "otherNonCurrentLiabilities",
+        "treasuryStock", "commonStock", "paymentsForOperatingActivities",
+        "proceedsFromOperatingActivities", "changeInOperatingLiabilities",
+        "changeInOperatingAssets", "changeInReceivables", "changeInInventory",
+        "profitLoss", "proceedsFromRepaymentsOfShortTermDebt", "paymentsForRepurchaseOfCommonStock",
+        "paymentsForRepurchaseOfEquity", "paymentsForRepurchaseOfPreferredStock",
+        "dividendPayoutCommonStock", "dividendPayoutPreferredStock",
+        "proceedsFromIssuanceOfCommonStock", "proceedsFromIssuanceOfLongTermDebtAndCapitalSecuritiesNet",
+        "proceedsFromIssuanceOfPreferredStock", "proceedsFromSaleOfTreasuryStock",
+        "changeInExchangeRate", "costOfRevenue", "costofGoodsAndServicesSold",
+        "investmentIncomeNet", "netInterestIncome", "interestIncome", "nonInterestIncome",
+        "otherNonOperatingIncome", "depreciation", "incomeTaxExpense",
+        "interestAndDebtExpense", "comprehensiveIncomeNetOfTax", "surprise"
     ]
 
-    derivedColumns =[]
+    # Step 3: Derived functions to add
+    derived_functions = [
+        monthly_return,
+        monthly_volatility,
+        price_range_pct,
+        volume_change,
+        profit_margin,
+        operating_margin,
+        gross_margin,
+        current_ratio,
+        debt_to_equity,
+        free_cash_flow,
+        fcf_margin,
+        ebitda_margin,
+        interest_coverage
+    ]
+
+    # Step 4: Delete unwanted columns
     df = format.deleteColumns(fileURL, columnsRemove)
 
+    # Step 5: Add derived columns
     df = format.addDerivedColumns(df, derived_functions)
+
+    # Step 6: Clean column names and set DateTime index
     df = format.cleanColumns(df)
-    # format.saveFileCSV(df)
-    # format.saveFileparquet(df)
+
+    # Step 7: Save final production files (optional)
+    format.saveFileCSV(df)
+    format.saveFileparquet(df)

@@ -26,7 +26,7 @@ class AlphaVantageExtractor:
     ''' Keys within JSON responses for corresponding function(s)'''
     keyMonth = "Monthly Adjusted Time Series" # for TIME_SERIES_MONTHLY_ADJUSTED
     keyReports = "quarterlyReports" # for INCOME_STATEMENT, BALANCE_SHEET, CASH_FLOW
-    keyEarnings = "quarterlyEarnings" # for EARNINGS
+    keyEarnings = "annualEarnings" or "quarterlyEarnings" # for EARNINGS
     keyShares = "data" # for SHARES_OUTSTANDING
 
 
@@ -260,6 +260,8 @@ class AlphaVantageLoader:
         print(f"Merged core and fundamentals saved to {out_path}")
 
         return result, out_path
+    
+
 
 
 
@@ -269,6 +271,16 @@ if __name__ == "__main__":
     extract = AlphaVantageExtractor()
     transform = AlphaVantageTransformer()
     load = AlphaVantageLoader()
+
+    
+    extract.StoreJSON(core_metric)
+    time.sleep(2)
+
+    for metric in fundamental_metrics:
+        time.sleep(2)
+        extract.StoreJSON(metric)
+
+    
 
     FundamentalFiles = [
     f"data/raw/metrics/{SYMBOL}_BALANCE_SHEET.json",
@@ -282,9 +294,10 @@ if __name__ == "__main__":
     merged_df = transform.merge_fundamentals(fundamental_dfs)
     FundamentalsIndexed = transform.setIndex(f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx")
     CoreMetricsIndexed = transform.setIndex(f"data/raw/metrics/{SYMBOL}_TIME_SERIES_MONTHLY_ADJUSTED.json")
-    load.merge_core_fundamentals(
+    result, out_path = load.merge_core_fundamentals(
         core_filename=f"data/processed/{SYMBOL}_Monthly_Adjusted_Index.xlsx",
         fund_filename=f"data/processed/{SYMBOL}_Fundamentals_Merged.xlsx"
     )
 
-    fileURL = load.out_path
+    fileURL = out_path
+
