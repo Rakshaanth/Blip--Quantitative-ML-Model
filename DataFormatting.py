@@ -86,14 +86,14 @@ class formatData:
 
     def saveFileparquet(self, df):
 
-        df.to_parquet(f"data/final/{Symbol}_features.parquet", index = False)
-        print("Production file saved as '.praquet'.")
+        df.to_parquet(f"data/final/parquet/{Symbol}_features.parquet", index = False)
+        print("Production file saved as '.parquet'.")
 
         return df
 
     def saveFileCSV(self, df):
 
-        df.to_csv(f"data/final/{Symbol}_features.csv", index = True)
+        df.to_csv(f"data/final/csv/{Symbol}_features.csv", index = True)
         print("Production file saved as 'CSV'.")
 
         return df
